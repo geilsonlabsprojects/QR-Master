@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QR Master Ultra - Gerador e Leitor de QR Code Profissional com opções avançadas de design e upload de imagens.">
+    <title>QR Master - Gerador & Leitor Ultra</title>
+    
+    <!-- Ícone -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3554/3554346.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons (Ícones Profissionais) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bibliotecas de QR Code -->
+    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { primary: '#6366f1', secondary: '#8b5cf6', dark: '#0f172a', darker: '#020617' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        
+        /* Glassmorphism e Paineis */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        /* Inputs Customizados */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            padding: 0;
+            cursor: pointer;
+            overflow: hidden;
+            background: transparent;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+        
+        /* Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px; width: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        /* Loader Spinner */
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            width: 24px; height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="selection:bg-primary selection:text-white flex flex-col min-h-screen relative">
+
+    <!-- Background Decoration -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-[-1]">
+        <div class="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-900/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] bg-violet-900/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- ==========================================
+         HEADER
+         ========================================== -->
+    <header class="w-full px-6 py-4 flex justify-between items-center border-b border-white/5 bg-darker/80 sticky top-0 z-40 backdrop-blur-xl">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <i class="ph ph-qr-code text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white leading-tight">QR Master <span class="text-[10px] uppercase tracking-wider bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded ml-1 align-middle">ULTRA</span></h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Gerador Profissional & Image Hosting</p>
+            </div>
+        </div>
+        
+        <button onclick="ScannerManager.openScanner()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2 rounded-xl transition-all text-sm font-semibold shadow-sm hover:shadow-md">
+            <i class="ph ph-scan text-lg"></i>
+            <span class="hidden sm:inline">Escanear QR</span>
+        </button>
+    </header>
+
+    <!-- ==========================================
+         APP PRINCIPAL (Gerador)
+         ========================================== -->
+    <main id="main-app" class="flex-grow container mx-auto px-4 py-8 max-w-7xl flex flex-col lg:flex-row gap-8 items-start relative">
+        
+        <!-- PAINEL ESQUERDO: ENTRADA DE DADOS -->
+        <div class="w-full lg:w-[55%] xl:w-[60%] space-y-6">
+            
+            <section class="glass-panel p-6 rounded-3xl border border-slate-800">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="ph ph-list-dashes text-indigo-400"></i> O que você deseja compartilhar?
+                </h3>
+                
+                <!-- Abas -->
+                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                    <button data-type="url" class="type-tab active-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-indigo-600 text-white shadow-md shadow-indigo-500/20">
+                        <i class="ph ph-link"></i> Link
+                    </button>
+                    <button data-type="image" class="type-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                        <i class="ph ph-image text-pink-400"></i> Imagem (Link)
+                    </button>
+                    <button data-type="text" class="type-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                        <i class="ph ph-text-aa"></i> Texto
+                    </button>
+                    <button data-type="whatsapp" class="type-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                        <i class="ph ph-whatsapp-logo text-green-400"></i> WhatsApp
+                    </button>
+                    <button data-type="wifi" class="type-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                        <i class="ph ph-wifi-high"></i> Wi-Fi
+                    </button>
+                    <button data-type="pix" class="type-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all whitespace-nowrap bg-slate-800 text-slate-400 hover:text-white border border-slate-700">
+                        <i class="ph ph-currency-circle-dollar text-teal-400"></i> Pix
+                    </button>
+                </div>
+
+                <!-- Formulários -->
+                <div class="mt-6 min-h-[200px]">
+                    <!-- URL -->
+                    <div id="input-url" class="input-section animate-fade-in">
+                        <label class="block text-slate-400 text-sm mb-2 font-medium">Cole sua URL</label>
+                        <div class="relative">
+                            <i class="ph ph-link absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
+                            <input type="url" id="val-url" oninput="QRManager.debounceGenerate()" placeholder="https://seusite.com.br" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- IMAGEM (Link Direto) -->
+                    <div id="input-image" class="input-section hidden animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Link Direto da Imagem (URL)</label>
+                            <input type="url" id="val-image-url" oninput="QRManager.debounceGenerate()" placeholder="https://exemplo.com/imagem.png" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                            <p class="text-[10px] text-slate-500 mt-2">Cole o link direto de uma imagem (terminado em .png, .jpg, etc).</p>
+                        </div>
+                    </div>
+
+                    <!-- Texto -->
+                    <div id="input-text" class="input-section hidden animate-fade-in">
+                        <label class="block text-slate-400 text-sm mb-2 font-medium">Digite sua mensagem</label>
+                        <textarea id="val-text" oninput="QRManager.debounceGenerate()" rows="4" placeholder="Escreva algo..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-indigo-500 outline-none resize-none"></textarea>
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div id="input-whatsapp" class="input-section hidden animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Número (com DDD)</label>
+                            <input type="tel" id="val-wa-phone" oninput="QRManager.debounceGenerate()" placeholder="5511999999999" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Mensagem Inicial</label>
+                            <textarea id="val-wa-msg" oninput="QRManager.debounceGenerate()" rows="2" placeholder="Olá, gostaria de..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:border-indigo-500 outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Wi-Fi -->
+                    <div id="input-wifi" class="input-section hidden animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Nome da Rede (SSID)</label>
+                            <input type="text" id="val-wifi-ssid" oninput="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-400 text-sm mb-2 font-medium">Senha</label>
+                                <input type="password" id="val-wifi-pass" oninput="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-sm mb-2 font-medium">Segurança</label>
+                                <select id="val-wifi-type" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none appearance-none">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">Livre</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pix -->
+                    <div id="input-pix" class="input-section hidden animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Chave Pix</label>
+                            <input type="text" id="val-pix-key" oninput="QRManager.debounceGenerate()" placeholder="Sua chave" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-400 text-sm mb-2 font-medium">Nome Beneficiário</label>
+                                <input type="text" id="val-pix-name" oninput="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-sm mb-2 font-medium">Cidade</label>
+                                <input type="text" id="val-pix-city" oninput="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-sm mb-2 font-medium">Valor R$ (Opcional)</label>
+                            <input type="number" id="val-pix-amount" step="0.01" oninput="QRManager.debounceGenerate()" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- PAINEL DIREITO: PREVIEW & AÇÕES -->
+        <div class="w-full lg:w-[45%] xl:w-[40%] lg:sticky lg:top-24 mt-8 lg:mt-0 flex flex-col gap-4">
+            
+            <!-- Caixa de Visualização -->
+            <div class="glass-panel p-6 rounded-3xl border border-slate-700 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+                <!-- Efeito Visual Atrás do QR -->
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 z-0"></div>
+                
+                <div class="w-full flex justify-between items-center mb-6 z-10">
+                    <h3 class="text-lg font-bold text-white tracking-wide">Seu QR Code</h3>
+                    <button onclick="UIManager.toggleSettings()" class="bg-indigo-600 hover:bg-indigo-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg shadow-indigo-500/20 group" title="Personalizar Design">
+                        <i class="ph ph-faders text-xl group-hover:rotate-90 transition-transform duration-300"></i>
+                    </button>
+                </div>
+                
+                <div class="relative group z-10 mb-6">
+                    <div class="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                    <div class="relative bg-white p-4 sm:p-6 rounded-2xl shadow-xl flex items-center justify-center min-h-[250px] min-w-[250px]" id="canvas-wrapper">
+                        <div id="canvas-container" class="overflow-hidden"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 w-full z-10">
+                    <button onclick="QRManager.download('png')" class="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
+                        <i class="ph ph-download-simple text-lg"></i> PNG
+                    </button>
+                    <button onclick="QRManager.download('svg')" class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">
+                        <i class="ph ph-bezier-curve text-lg"></i> SVG
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-blue-900/20 border border-blue-500/20 rounded-2xl p-4 flex items-start gap-3">
+                <i class="ph ph-info text-blue-400 text-xl flex-shrink-0 mt-0.5"></i>
+                <p class="text-xs text-blue-200/70 leading-relaxed">Clique no ícone de <strong class="text-blue-300">Configurações</strong> acima para alterar cores, formato dos pontos, inserir sua logomarca e ajustar bordas.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         DRAWER DE CONFIGURAÇÕES AVANÇADAS (SLIDE-OVER)
+         ========================================== -->
+    <div id="settings-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300" onclick="UIManager.toggleSettings()"></div>
+    
+    <div id="settings-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-slate-900 border-l border-slate-700 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- Drawer Header -->
+        <div class="px-6 py-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="ph ph-palette text-indigo-400"></i> Personalização
+            </h2>
+            <button onclick="UIManager.toggleSettings()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                <i class="ph ph-x text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Drawer Content (Scrollable) -->
+        <div class="flex-grow overflow-y-auto p-6 space-y-8 custom-scrollbar pb-24">
+            
+            <!-- 1. Cores -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">1. Cores do QR</h4>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800">
+                        <span class="text-sm text-slate-300">Cor Principal (Pontos)</span>
+                        <input type="color" id="opt-color-dark" value="#000000" oninput="QRManager.debounceGenerate()">
+                    </div>
+                    <div class="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-800">
+                        <span class="text-sm text-slate-300">Cor de Fundo</span>
+                        <input type="color" id="opt-color-light" value="#ffffff" oninput="QRManager.debounceGenerate()">
+                    </div>
+                    
+                    <!-- Gradiente Toggle -->
+                    <div class="bg-slate-800/30 p-4 rounded-xl border border-slate-800 space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="opt-use-gradient" onchange="UIManager.toggleDrawerGradient(); QRManager.debounceGenerate()" class="rounded border-slate-700 text-indigo-500 bg-slate-900 w-4 h-4">
+                            <span class="text-sm text-slate-300 font-medium">Ativar Gradiente</span>
+                        </label>
+                        <div id="drawer-gradient-opts" class="hidden space-y-3 pt-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-400">Cor Final</span>
+                                <input type="color" id="opt-color-grad" value="#6366f1" oninput="QRManager.debounceGenerate()">
+                            </div>
+                            <div>
+                                <select id="opt-grad-type" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white outline-none">
+                                    <option value="linear">Linear</option>
+                                    <option value="radial">Radial</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Formatos -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">2. Estilos e Formas</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Padrão dos Pontos</label>
+                        <select id="opt-dots" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none">
+                            <option value="square">Quadrado (Padrão)</option>
+                            <option value="rounded">Arredondado</option>
+                            <option value="dots">Pontilhados</option>
+                            <option value="classy">Clássico</option>
+                            <option value="classy-rounded">Clássico Arredondado</option>
+                            <option value="extra-rounded">Extra Arredondado</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Moldura (Canto)</label>
+                            <select id="opt-corners-sq" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none">
+                                <option value="square">Quadrado</option>
+                                <option value="extra-rounded">Arredondado</option>
+                                <option value="dot">Ponto</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Centro (Canto)</label>
+                            <select id="opt-corners-dot" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none">
+                                <option value="square">Quadrado</option>
+                                <option value="dot">Ponto</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Logomarca -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">3. Logomarca</h4>
+                <div class="space-y-5">
+                    
+                    <div class="flex flex-col gap-2">
+                        <label for="opt-logo-file" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 border-dashed rounded-xl p-4 cursor-pointer transition-colors">
+                            <i class="ph ph-upload-simple text-indigo-400 text-xl"></i>
+                            <span class="text-sm text-slate-300 font-medium" id="logo-file-name">Escolher Imagem...</span>
+                        </label>
+                        <input type="file" id="opt-logo-file" accept="image/*" class="hidden" onchange="QRManager.handleLogoUpload(event)">
+                        
+                        <button onclick="QRManager.clearLogo()" id="btn-clear-logo" class="hidden w-full py-2 text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 transition-colors">
+                            <i class="ph ph-trash"></i> Remover Logo Atual
+                        </button>
+                    </div>
+
+                    <!-- Configurações Finas da Logo -->
+                    <div class="bg-slate-800/30 p-4 rounded-xl border border-slate-800 space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs text-slate-400 font-medium">Tamanho da Logo</label>
+                                <span id="lbl-logo-size" class="text-xs text-indigo-400 font-bold">40%</span>
+                            </div>
+                            <input type="range" id="opt-logo-size" min="0.1" max="0.6" step="0.05" value="0.4" oninput="document.getElementById('lbl-logo-size').innerText = Math.round(this.value * 100) + '%'; QRManager.debounceGenerate()" class="w-full">
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs text-slate-400 font-medium">Margem / Borda</label>
+                                <span id="lbl-logo-margin" class="text-xs text-indigo-400 font-bold">5px</span>
+                            </div>
+                            <input type="range" id="opt-logo-margin" min="0" max="30" step="1" value="5" oninput="document.getElementById('lbl-logo-margin').innerText = this.value + 'px'; QRManager.debounceGenerate()" class="w-full">
+                        </div>
+
+                        <label class="flex items-center gap-2 cursor-pointer mt-2 pt-2 border-t border-slate-700">
+                            <input type="checkbox" id="opt-logo-bg" onchange="QRManager.debounceGenerate()" checked class="rounded border-slate-700 text-indigo-500 bg-slate-900 w-4 h-4">
+                            <span class="text-xs text-slate-300">Ocultar pontos atrás da logo (Recomendado)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Avançado -->
+            <div>
+                <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">4. Avançado</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Nível de Correção de Erro</label>
+                        <select id="opt-error-level" onchange="QRManager.debounceGenerate()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-300 outline-none">
+                            <option value="L">Baixo (L) - 7%</option>
+                            <option value="M">Médio (M) - 15%</option>
+                            <option value="Q" selected>Alto (Q) - 25% (Ideal p/ Logo)</option>
+                            <option value="H">Máximo (H) - 30%</option>
+                        </select>
+                        <p class="text-[10px] text-slate-500 mt-1">Quanto maior, mais o código pode ser danificado ou coberto por logos e ainda ser lido.</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-xs text-slate-400 font-medium">Margem do QR Code</label>
+                            <span id="lbl-qr-margin" class="text-xs text-indigo-400 font-bold">0px</span>
+                        </div>
+                        <input type="range" id="opt-qr-margin" min="0" max="50" step="5" value="0" oninput="document.getElementById('lbl-qr-margin').innerText = this.value + 'px'; QRManager.debounceGenerate()" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODALS (LEITOR DE QR & RESULTADO)
+         ========================================== -->
+    
+    <!-- Scanner Modal -->
+    <div id="scannerModal" class="fixed inset-0 bg-darker/95 z-[100] hidden items-center justify-center p-4 backdrop-blur-xl">
+        <div class="bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-700 shadow-2xl relative flex flex-col items-center">
+            <button onclick="ScannerManager.closeScanner()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"><i class="ph ph-x"></i></button>
+            
+            <div class="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center mb-4">
+                <i class="ph ph-scan text-indigo-400 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-4 text-white">Escanear QR Code</h3>
+            
+            <!-- Caixa da Câmera -->
+            <div id="reader" class="w-full bg-black rounded-2xl overflow-hidden mb-4 border border-slate-800 shadow-inner" style="min-height: 250px;"></div>
+            
+            <!-- Opção de ler da galeria -->
+            <div class="w-full flex flex-col gap-3 border-t border-slate-800 pt-4 mt-2">
+                <p class="text-xs text-slate-400 text-center">Ou escolha uma imagem do seu dispositivo:</p>
+                <label class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white py-3 rounded-xl font-bold transition-all cursor-pointer shadow-sm">
+                    <i class="ph ph-image text-lg"></i> Ler da Galeria
+                    <input type="file" id="qr-gallery-input" accept="image/*" class="hidden" onchange="ScannerManager.scanFromFile(event)">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Result Modal (Pop-up Bonito) -->
+    <div id="scanResultModal" class="fixed inset-0 bg-darker/95 z-[150] hidden items-center justify-center p-4 backdrop-blur-xl transition-all">
+        <div class="bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-700 shadow-2xl relative flex flex-col items-center animate-fade-in">
+            <button onclick="UIManager.closeScanResult()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"><i class="ph ph-x"></i></button>
+
+            <div class="w-14 h-14 bg-gradient-to-tr from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-500/20">
+                <i class="ph ph-check text-white text-2xl font-bold"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-6 text-white text-center">Conteúdo Escaneado</h3>
+
+            <!-- Onde o resultado aparece -->
+            <div class="w-full bg-slate-800 rounded-2xl p-5 border border-slate-700 mb-6 max-h-60 overflow-y-auto custom-scrollbar text-center flex flex-col justify-center items-center" id="scan-result-content">
+                <!-- Conteúdo injetado via JS -->
+            </div>
+
+            <!-- Botões de ação do resultado -->
+            <div class="grid grid-cols-2 gap-3 w-full" id="scan-result-actions">
+                <button onclick="UIManager.copyScanResult()" class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg">
+                    <i class="ph ph-copy text-lg"></i> Copiar
+                </button>
+                <button id="btn-open-link" class="hidden items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
+                    <i class="ph ph-arrow-square-out text-lg"></i> Abrir Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white transform transition-all duration-300 translate-y-32 z-[200] font-medium border flex items-center gap-2 text-sm whitespace-nowrap"></div>
+
+    <!-- ==========================================
+         SCRIPTS
+         ========================================== -->
+    <script>
+        // ESTADO GLOBAL
+        const AppState = {
+            qrCodeObj: null,
+            currentType: 'url',
+            logoData: null,
+            debounceTimer: null,
+            settingsOpen: false,
+            lastScannedText: ''
+        };
+
+        // UI Manager
+        const UIManager = {
+            init: () => {
+                document.querySelectorAll('.type-tab').forEach(btn => {
+                    btn.addEventListener('click', (e) => UIManager.switchTab(e.currentTarget));
+                });
+            },
+
+            showToast: (msg, type = 'success') => {
+                const t = document.getElementById('toast');
+                t.innerHTML = `${type === 'error' ? '<i class="ph ph-warning-circle text-lg"></i>' : '<i class="ph ph-check-circle text-lg"></i>'} ${msg}`;
+                
+                const classes = {
+                    success: 'bg-indigo-600 border-indigo-500',
+                    error: 'bg-red-600 border-red-500',
+                    info: 'bg-slate-800 border-slate-700'
+                };
+                
+                t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white transform transition-all duration-300 z-[200] font-medium border flex items-center gap-2 text-sm whitespace-nowrap ${classes[type]}`;
+                t.classList.remove('translate-y-32');
+                
+                if (UIManager.toastTimeout) clearTimeout(UIManager.toastTimeout);
+                UIManager.toastTimeout = setTimeout(() => t.classList.add('translate-y-32'), 3000);
+            },
+
+            switchTab: (btnElement) => {
+                const type = btnElement.getAttribute('data-type');
+                AppState.currentType = type;
+
+                // Estilo das abas
+                document.querySelectorAll('.type-tab').forEach(b => {
+                    b.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/20');
+                    b.classList.add('bg-slate-800', 'text-slate-400', 'border-slate-700');
+                });
+                
+                btnElement.classList.remove('bg-slate-800', 'text-slate-400', 'border-slate-700');
+                btnElement.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/20');
+
+                // Mostra/Oculta Inputs
+                document.querySelectorAll('.input-section').forEach(s => {
+                    s.classList.add('hidden');
+                    s.classList.remove('block');
+                });
+                const target = document.getElementById(`input-${type}`);
+                if(target) target.classList.remove('hidden'), target.classList.add('block');
+                
+                QRManager.generate();
+            },
+
+            toggleSettings: () => {
+                AppState.settingsOpen = !AppState.settingsOpen;
+                const drawer = document.getElementById('settings-drawer');
+                const overlay = document.getElementById('settings-overlay');
+                
+                if(AppState.settingsOpen) {
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => overlay.classList.replace('opacity-0', 'opacity-100'), 10);
+                    drawer.classList.remove('translate-x-full');
+                } else {
+                    overlay.classList.replace('opacity-100', 'opacity-0');
+                    drawer.classList.add('translate-x-full');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            },
+
+            toggleDrawerGradient: () => {
+                const useGrad = document.getElementById('opt-use-gradient').checked;
+                const opts = document.getElementById('drawer-gradient-opts');
+                if(useGrad) opts.classList.remove('hidden');
+                else opts.classList.add('hidden');
+            },
+
+            // Funções do Modal de Resultado Escaneado
+            closeScanResult: () => {
+                const modal = document.getElementById('scanResultModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            },
+
+            copyScanResult: () => {
+                if(AppState.lastScannedText) {
+                    navigator.clipboard.writeText(AppState.lastScannedText)
+                        .then(() => UIManager.showToast("Conteúdo copiado com sucesso!"))
+                        .catch(() => UIManager.showToast("Erro ao copiar.", "error"));
+                }
+            }
+        };
+
+        // QRManager: Engine de Geração
+        const QRManager = {
+            init: () => {
+                AppState.qrCodeObj = new QRCodeStyling({
+                    width: 300,
+                    height: 300,
+                    type: "svg",
+                    data: "https://seusite.com.br",
+                    margin: 0,
+                    qrOptions: { errorCorrectionLevel: 'Q' },
+                    imageOptions: { crossOrigin: "anonymous", margin: 5 }
+                });
+                
+                const container = document.getElementById('canvas-container');
+                container.innerHTML = '';
+                AppState.qrCodeObj.append(container);
+                
+                setTimeout(QRManager.generate, 100);
+            },
+
+            debounceGenerate: () => {
+                clearTimeout(AppState.debounceTimer);
+                AppState.debounceTimer = setTimeout(QRManager.generate, 300);
+            },
+
+            handleLogoUpload: (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                document.getElementById('logo-file-name').innerText = file.name.substring(0, 15) + '...';
+                document.getElementById('btn-clear-logo').classList.remove('hidden');
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    AppState.logoData = event.target.result;
+                    QRManager.generate();
+                };
+                reader.readAsDataURL(file);
+            },
+
+            clearLogo: () => {
+                AppState.logoData = null;
+                document.getElementById('opt-logo-file').value = '';
+                document.getElementById('logo-file-name').innerText = 'Escolher Imagem...';
+                document.getElementById('btn-clear-logo').classList.add('hidden');
+                QRManager.generate();
+                UIManager.showToast('Logo removida', 'info');
+            },
+
+            getDataString: () => {
+                const t = AppState.currentType;
+                let data = "";
+                
+                if (t === 'url') data = document.getElementById('val-url').value || "https://seusite.com.br";
+                else if (t === 'text') data = document.getElementById('val-text').value || "Seu texto";
+                else if (t === 'image') data = document.getElementById('val-image-url').value || "https://via.placeholder.com/150";
+                else if (t === 'whatsapp') {
+                    const phone = document.getElementById('val-wa-phone').value.replace(/\D/g, '');
+                    const msg = encodeURIComponent(document.getElementById('val-wa-msg').value);
+                    data = phone ? `https://wa.me/${phone}?text=${msg}` : "https://wa.me/";
+                }
+                else if (t === 'wifi') {
+                    const s = document.getElementById('val-wifi-ssid').value || "WIFI";
+                    const p = document.getElementById('val-wifi-pass').value;
+                    const type = document.getElementById('val-wifi-type').value;
+                    data = `WIFI:T:${type};S:${s};P:${p};;`;
+                }
+                else if (t === 'pix') {
+                    const k = document.getElementById('val-pix-key').value || "chave";
+                    const n = document.getElementById('val-pix-name').value || "Nome";
+                    const c = document.getElementById('val-pix-city').value || "Cidade";
+                    const v = document.getElementById('val-pix-amount').value || "";
+                    data = QRManager.generatePixPayload(k, n, c, v);
+                }
+                return data;
+            },
+
+            generatePixPayload: (key, name, city, amount, txid = '***') => {
+                 name = name.substring(0, 25).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                 city = city.substring(0, 15).toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                 const format = (id, val) => id + val.length.toString().padStart(2, '0') + val;
+                 
+                 let payload = format('00', '01') + 
+                               format('26', format('00', 'BR.GOV.BCB.PIX') + format('01', key)) + 
+                               format('52', '0000') + 
+                               format('53', '986');
+                               
+                 if (amount && parseFloat(amount) > 0) {
+                     payload += format('54', parseFloat(amount).toFixed(2));
+                 }
+                 
+                 payload += format('58', 'BR') + format('59', name) + format('60', city) + format('62', format('05', txid)) + '6304';
+                 
+                 const poly = 0x1021;
+                 let crc = 0xFFFF;
+                 for (let i = 0; i < payload.length; i++) {
+                     crc ^= payload.charCodeAt(i) << 8;
+                     for (let j = 0; j < 8; j++) {
+                         if ((crc & 0x8000) !== 0) {
+                             crc = (crc << 1) ^ poly;
+                         } else {
+                             crc = crc << 1;
+                         }
+                     }
+                 }
+                 return payload + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+            },
+
+            generate: () => {
+                try {
+                    const data = QRManager.getDataString();
+                    
+                    const colorDark = document.getElementById('opt-color-dark').value;
+                    const colorLight = document.getElementById('opt-color-light').value;
+                    const useGrad = document.getElementById('opt-use-gradient').checked;
+                    
+                    let dotsOpt = { color: colorDark, type: document.getElementById('opt-dots').value };
+                    if(useGrad) {
+                        dotsOpt.gradient = {
+                            type: document.getElementById('opt-grad-type').value,
+                            colorStops: [{ offset: 0, color: colorDark }, { offset: 1, color: document.getElementById('opt-color-grad').value }]
+                        };
+                    }
+
+                    const cornersSq = document.getElementById('opt-corners-sq').value;
+                    const cornersDot = document.getElementById('opt-corners-dot').value;
+
+                    const hideBg = document.getElementById('opt-logo-bg').checked;
+                    const logoMargin = parseInt(document.getElementById('opt-logo-margin').value);
+                    const logoSize = parseFloat(document.getElementById('opt-logo-size').value);
+                    const errLevel = document.getElementById('opt-error-level').value;
+                    const qrMargin = parseInt(document.getElementById('opt-qr-margin').value);
+
+                    AppState.qrCodeObj.update({
+                        data: data,
+                        margin: qrMargin,
+                        qrOptions: { errorCorrectionLevel: errLevel },
+                        dotsOptions: dotsOpt,
+                        backgroundOptions: { color: colorLight },
+                        cornersSquareOptions: { type: cornersSq, color: colorDark },
+                        cornersDotOptions: { type: cornersDot, color: colorDark },
+                        image: AppState.logoData || "",
+                        imageOptions: {
+                            hideBackgroundDots: hideBg,
+                            imageSize: logoSize,
+                            margin: logoMargin,
+                            crossOrigin: "anonymous"
+                        }
+                    });
+                } catch(e) { console.error(e); }
+            },
+
+            download: (ext) => {
+                AppState.qrCodeObj.download({ name: `qrmaster_${AppState.currentType}`, extension: ext });
+                UIManager.showToast(`Download ${ext.toUpperCase()} iniciado!`);
+            }
+        };
+
+        // ScannerManager (Câmera, Galeria e Modal de Resultado)
+        let html5Scanner = null;
+        const ScannerManager = {
+            isScanning: false,
+
+            openScanner: () => {
+                document.getElementById('scannerModal').classList.remove('hidden');
+                document.getElementById('scannerModal').classList.add('flex');
+                
+                // Limpa o input de arquivo anterior, se houver
+                const fileInput = document.getElementById('qr-gallery-input');
+                if(fileInput) fileInput.value = "";
+
+                if (!html5Scanner) html5Scanner = new Html5Qrcode("reader");
+                
+                html5Scanner.start(
+                    { facingMode: "environment" }, 
+                    { fps: 10, qrbox: 250 },
+                    (text) => {
+                        ScannerManager.closeScanner();
+                        ScannerManager.showResult(text);
+                    },
+                    (err) => { /* Ignora erros silentes de varredura contínua */ }
+                ).then(() => {
+                    ScannerManager.isScanning = true;
+                }).catch(() => {
+                    UIManager.showToast("Aguardando permissão ou câmera indisponível.", "info");
+                });
+            },
+
+            closeScanner: () => {
+                if (html5Scanner && ScannerManager.isScanning) {
+                    html5Scanner.stop().then(() => {
+                        ScannerManager.isScanning = false;
+                    }).catch(()=>{});
+                }
+                document.getElementById('scannerModal').classList.add('hidden');
+                document.getElementById('scannerModal').classList.remove('flex');
+            },
+
+            scanFromFile: (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Se a câmera estiver rodando, para ela primeiro
+                if (html5Scanner && ScannerManager.isScanning) {
+                    html5Scanner.stop().then(() => {
+                        ScannerManager.isScanning = false;
+                        ScannerManager.processFile(file);
+                    }).catch(() => {
+                        ScannerManager.processFile(file);
+                    });
+                } else {
+                    ScannerManager.processFile(file);
+                }
+            },
+
+            processFile: (file) => {
+                if (!html5Scanner) html5Scanner = new Html5Qrcode("reader");
+                
+                html5Scanner.scanFile(file, true)
+                    .then(text => {
+                        ScannerManager.closeScanner();
+                        ScannerManager.showResult(text);
+                    })
+                    .catch(err => {
+                        UIManager.showToast("Nenhum QR Code encontrado na imagem.", "error");
+                    });
+            },
+
+            showResult: (text) => {
+                AppState.lastScannedText = text;
+                
+                const modal = document.getElementById('scanResultModal');
+                const contentDiv = document.getElementById('scan-result-content');
+                const btnOpenLink = document.getElementById('btn-open-link');
+
+                // Mostrar o Modal
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                // Verifica se é uma URL ou Imagem
+                const isUrl = text.startsWith('http://') || text.startsWith('https://');
+                const isImage = text.match(/\.(jpeg|jpg|gif|png|webp|bmp)(\?.*)?$/i);
+
+                if (isImage) {
+                    contentDiv.innerHTML = `
+                        <div class="p-2 bg-black rounded-xl inline-block mb-2 w-full">
+                            <img src="${text}" class="max-h-40 mx-auto object-contain rounded-lg" alt="Imagem Escaneada" onerror="this.onerror=null; this.src=''; this.alt='Erro ao carregar imagem';">
+                        </div>
+                        <a href="${text}" target="_blank" class="text-indigo-400 hover:text-indigo-300 break-all underline text-sm">${text}</a>
+                    `;
+                    // Mostrar botão "Abrir Link"
+                    btnOpenLink.classList.remove('hidden');
+                    btnOpenLink.classList.add('flex');
+                    btnOpenLink.onclick = () => window.open(text, '_blank');
+                } else if (isUrl) {
+                    contentDiv.innerHTML = `
+                        <i class="ph ph-link text-indigo-400 text-3xl mb-2"></i>
+                        <a href="${text}" target="_blank" class="text-indigo-400 hover:text-indigo-300 break-all underline text-lg font-medium">${text}</a>
+                    `;
+                    // Mostrar botão "Abrir Link"
+                    btnOpenLink.classList.remove('hidden');
+                    btnOpenLink.classList.add('flex');
+                    btnOpenLink.onclick = () => window.open(text, '_blank');
+                } else {
+                    contentDiv.innerHTML = `
+                        <i class="ph ph-text-t text-slate-400 text-3xl mb-2"></i>
+                        <p class="text-white break-words whitespace-pre-wrap text-lg leading-relaxed">${text}</p>
+                    `;
+                    // Esconder botão "Abrir Link"
+                    btnOpenLink.classList.add('hidden');
+                    btnOpenLink.classList.remove('flex');
+                }
+            }
+        };
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', () => {
+            UIManager.init();
+            QRManager.init();
+        });
+
+    </script>
+</body>
+</html>
