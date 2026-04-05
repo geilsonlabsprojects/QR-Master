@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "apk_url": "[https://github.com/SEU_USER/SEU_REPO/releases/download/v1.1/app.apk](https://github.com/SEU_USER/SEU_REPO/releases/download/v1.1/app.apk)",
+  "apk_url": "https://github.com/geilsonlabsprojects/QR-Master/releases/download/QR-Master-Vers%C3%B5es/QR.Master.v1.3.apk",
   "force_update": false,
   "changelog": "Melhorias na velocidade de leitura e novo design de tela cheia."
 }
